@@ -999,6 +999,18 @@ fun PetugasChatTab(profile: Profile) {
     var chatMessageText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
+    // Polling ketat khusus layar chat: jalan tiap 3 detik selama tab ini
+    // dibuka, supaya pesan baru dari warga tidak perlu nunggu sampai 8
+    // detik (polling global) untuk muncul di sisi petugas.
+    LaunchedEffect(Unit) {
+        while (true) {
+            try {
+                SupabaseService.refreshChats()
+            } catch (e: Exception) { /* dicoba lagi putaran berikutnya */ }
+            kotlinx.coroutines.delay(3_000)
+        }
+    }
+
     if (activeContact != null) {
         val filteredChats = allChats.filter {
             (it.pengirimId == profile.id && it.penerimaId == activeContact!!.id) ||

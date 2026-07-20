@@ -206,6 +206,13 @@ object SupabaseService {
         }.decodeSingle<Profile>()
     }
 
+    /** Refresh cepat & ringan khusus chat_pesan — dipakai layar chat kedua
+     * sisi (petugas & warga) supaya bisa polling ketat selama percakapan
+     * sedang dibuka, tanpa ikut menarik ulang tabel lain yang tidak relevan. */
+    suspend fun refreshChats() {
+        _chats.value = requireClient().postgrest.from("chat_pesan").select().decodeList()
+    }
+
     /** Refresh cepat & ringan khusus lokasi_petugas + profiles — dipakai
      * oleh layar peta warga supaya bisa polling ketat (tiap 5 detik) tanpa
      * ikut menarik ulang tabel lain yang tidak relevan buat peta (laporan,

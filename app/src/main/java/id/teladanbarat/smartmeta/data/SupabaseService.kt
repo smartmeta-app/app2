@@ -399,6 +399,23 @@ object SupabaseService {
                 supa.auth.refreshCurrentSession()
                 supa.postgrest.from("lokasi_petugas").upsert(payload) { onConflict = "petugas_id" }
             } catch (e2: Exception) {
+                val pesan = e2.message ?: ""
+                if (pesan.contains("refresh token", ignoreCase = true) ||
+                    pesan.contains("session", ignoreCase = true) ||
+                    pesan.contains("JWT", ignoreCase = true)
+                ) {
+                    // Sesi benar-benar hilang (bukan cuma kedaluwarsa biasa —
+                    // ini bisa terjadi kalau Android sempat mematikan total
+                    // proses app dan menghidupkan ulang HANYA foreground
+                    // service-nya, tanpa lewat halaman utama yang biasanya
+                    // memuat ulang sesi). Daripada gagal terus-menerus diam-
+                    // diam dan membuat petugas terjebak (tombol GPS terkunci
+                    // tapi tracking-nya rusak), logout paksa di sini supaya
+                    // app kembali ke halaman Login dan petugas bisa masuk
+                    // ulang dengan sesi yang benar-benar baru & valid.
+                    Log.e(TAG, "Sesi login hilang total, logout paksa.", e2)
+                    logout()
+                }
                 throw e2
             }
         }

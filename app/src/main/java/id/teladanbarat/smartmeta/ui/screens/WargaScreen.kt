@@ -104,6 +104,23 @@ fun WargaMapTab(profile: Profile) {
     val allProfiles by SupabaseService.profiles.collectAsState()
     var mapLoadError by remember { mutableStateOf(false) }
 
+    // Polling KHUSUS untuk layar peta ini — jalan tiap 5 detik SELAMA warga
+    // sedang membuka tab Peta, terpisah dari polling global 8 detik di
+    // SupabaseService. Ini jaring pengaman lapis kedua: kalau proses
+    // background sempat "dibekukan" Android (umum terjadi saat app
+    // diminimize lalu dibuka lagi) dan polling globalnya telat, begitu
+    // warga benar-benar melihat layar ini datanya dipaksa fresh lagi.
+    LaunchedEffect(Unit) {
+        while (true) {
+            try {
+                SupabaseService.refreshLokasiDanProfiles()
+            } catch (e: Exception) {
+                // abaikan, dicoba lagi di putaran berikutnya
+            }
+            kotlinx.coroutines.delay(5_000)
+        }
+    }
+
     // Lokasi warga sungguhan dari GPS HP-nya — dipakai untuk pusat peta dan
     // menghitung jarak ke tiap petugas. SEBELUMNYA kode ini filter petugas
     // berdasarkan kecocokan zona_id, padahal dashboard admin tidak punya

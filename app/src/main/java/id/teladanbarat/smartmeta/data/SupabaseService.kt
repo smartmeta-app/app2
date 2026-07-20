@@ -206,6 +206,17 @@ object SupabaseService {
         }.decodeSingle<Profile>()
     }
 
+    /** Refresh cepat & ringan khusus lokasi_petugas + profiles — dipakai
+     * oleh layar peta warga supaya bisa polling ketat (tiap 5 detik) tanpa
+     * ikut menarik ulang tabel lain yang tidak relevan buat peta (laporan,
+     * chat, bank sampah, dst), yang justru bikin boros request kalau ikut
+     * di-refresh tiap 5 detik juga. */
+    suspend fun refreshLokasiDanProfiles() {
+        val supa = requireClient()
+        _lokasiPetugas.value = supa.postgrest.from("lokasi_petugas").select().decodeList()
+        _profiles.value = supa.postgrest.from("profiles").select().decodeList()
+    }
+
     /** Muat ulang semua data referensi & transaksi sekali saja (dipanggil
      * otomatis setelah login, dan bisa dipanggil manual untuk pull-to-refresh).
      *

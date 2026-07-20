@@ -329,6 +329,20 @@ object SupabaseService {
         serviceScope.launch {
             while (true) {
                 kotlinx.coroutines.delay(8_000)
+
+                // Refresh sesi login proaktif tiap putaran — supaya token
+                // tidak sempat kedaluwarsa diam-diam saat app lama di
+                // background, yang menyebabkan request berikutnya (baca
+                // maupun tulis) gagal karena dianggap tidak terautentikasi.
+                try {
+                    client.auth.refreshCurrentSession()
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Wajar gagal kalau sesi memang masih fresh (belum perlu
+                    // di-refresh) atau tidak ada koneksi sesaat — abaikan.
+                }
+
                 try {
                     _lokasiPetugas.value = client.postgrest.from("lokasi_petugas").select().decodeList()
                 } catch (e: kotlinx.coroutines.CancellationException) {
@@ -370,8 +384,23 @@ object SupabaseService {
      * alih-alih diam-diam pura-pura berhasil. */
     suspend fun updateLiveLocation(petugasId: String, lat: Double, lng: Double) {
         val payload = LokasiPetugas(petugasId = petugasId, latitude = lat, longitude = lng)
-        requireClient().postgrest.from("lokasi_petugas").upsert(payload) {
-            onConflict = "petugas_id"
+        val supa = requireClient()
+        try {
+            supa.postgrest.from("lokasi_petugas").upsert(payload) { onConflict = "petugas_id" }
+        } catch (e: Exception) {
+            // Kemungkinan besar sesi login sempat kedaluwarsa selama app lama
+            // di-background (token JWT ada masa berlakunya, dan proses
+            // refresh otomatis kadang belum sempat jalan kalau HP membekukan
+            // background task). Coba paksa refresh sesi sekali, lalu ulangi
+            // kirim datanya — kalau masih gagal juga, baru benar-benar
+            // dianggap gagal dan dilempar ke pemanggil.
+            Log.e(TAG, "updateLiveLocation gagal, coba refresh sesi & retry sekali", e)
+            try {
+                supa.auth.refreshCurrentSession()
+                supa.postgrest.from("lokasi_petugas").upsert(payload) { onConflict = "petugas_id" }
+            } catch (e2: Exception) {
+                throw e2
+            }
         }
     }
 

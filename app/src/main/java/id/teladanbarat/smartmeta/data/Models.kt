@@ -31,6 +31,12 @@ enum class ShiftStatus {
 }
 
 @Serializable
+enum class TahapLaporan {
+    @SerialName("sebelum") SEBELUM,
+    @SerialName("sesudah") SESUDAH
+}
+
+@Serializable
 enum class PoinTxType {
     @SerialName("setor_sampah") SETOR_SAMPAH,
     @SerialName("tukar_sembako") TUKAR_SEMBAKO,
@@ -98,6 +104,7 @@ data class Laporan(
     @SerialName("latitude") val latitude: Double? = null,
     @SerialName("longitude") val longitude: Double? = null,
     @SerialName("status") val status: LaporanStatus = LaporanStatus.BARU,
+    @SerialName("tahap") val tahap: TahapLaporan? = null,
     @SerialName("catatan_admin") val catatanAdmin: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
     @SerialName("updated_at") val updatedAt: String? = null

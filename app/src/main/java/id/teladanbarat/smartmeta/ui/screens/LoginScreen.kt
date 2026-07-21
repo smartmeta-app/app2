@@ -1,6 +1,8 @@
 package id.teladanbarat.smartmeta.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -14,11 +16,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import id.teladanbarat.smartmeta.R
 import id.teladanbarat.smartmeta.data.Profile
 import id.teladanbarat.smartmeta.data.SupabaseService
 import id.teladanbarat.smartmeta.ui.theme.ThemeToggleButton
@@ -67,30 +72,33 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(56.dp))
 
-            // Lencana logo bulat dengan aksen warna signal amber
-            Box(
+            // Logo SMART META — sama dengan yang dipakai di dashboard admin
+            Image(
+                painter = painterResource(id = R.drawable.logo_smart_meta),
+                contentDescription = "Logo SMART META",
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(84.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.DeleteSweep,
-                    contentDescription = "SMART META",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(42.dp)
-                )
-            }
+                    .size(104.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(24.dp))
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Text(
-                text = "SMART META",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center
-            )
+            Row {
+                Text(
+                    text = "SMART ",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "META",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.secondary,
+                    textAlign = TextAlign.Center
+                )
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
 

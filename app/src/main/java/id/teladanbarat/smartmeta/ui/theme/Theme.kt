@@ -36,14 +36,14 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFFB4791F),          // amber digelapkan supaya kontras cukup di atas terang
+    primary = Color(0xFF1F6FD0),          // biru "signal" digelapkan supaya kontras cukup di atas terang
     onPrimary = Color.White,
     primaryContainer = SignalAmber.copy(alpha = 0.18f),
-    onPrimaryContainer = Color(0xFF6B4712),
-    secondary = Color(0xFF3F7A54),
+    onPrimaryContainer = Color(0xFF12437F),
+    secondary = Color(0xFF1B8F5B),
     onSecondary = Color.White,
     secondaryContainer = MelatiSage.copy(alpha = 0.22f),
-    onSecondaryContainer = Color(0xFF1F4A2C),
+    onSecondaryContainer = Color(0xFF0F4A2F),
     tertiary = Color(0xFF3B6E96),
     onTertiary = Color.White,
     tertiaryContainer = BestariDusty.copy(alpha = 0.22f),
@@ -67,8 +67,9 @@ private val LightColorScheme = lightColorScheme(
  * ikut pengaturan sistem HP kalau user belum pernah memilih.
  *
  * Sengaja TIDAK memakai dynamic color (Material You) supaya identitas warna
- * SMART META (teal + amber + sage + dusty blue) konsisten di semua HP,
- * senada dengan dashboard admin — bukan berubah-ubah ikut wallpaper user.
+ * SMART META (navy + biru signal + hijau melati + biru muda bestari)
+ * konsisten di semua HP, senada dengan dashboard admin — bukan berubah-ubah
+ * ikut wallpaper user.
  */
 @Composable
 fun MyApplicationTheme(

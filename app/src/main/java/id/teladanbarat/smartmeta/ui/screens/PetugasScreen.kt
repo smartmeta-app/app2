@@ -107,11 +107,9 @@ fun PetugasDashboardTab(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val allLaporan by SupabaseService.laporan.collectAsState()
     val zonasList by SupabaseService.zonas.collectAsState()
 
     val myZone = zonasList.firstOrNull { it.id == profile.zonaId }
-    val assignedLaporan = allLaporan.filter { it.petugasId == profile.id || it.petugasId == null }
 
     // Begitu petugas menyalakan tracking, tombol Matikan langsung TERKUNCI
     // dan baru bisa dipakai lagi setelah dia absen KELUAR. Sebelumnya kunci
@@ -357,168 +355,6 @@ fun PetugasDashboardTab(
             }
         }
 
-        // Assigned jobs Header
-        item {
-            Text(
-                text = "Tugas & Laporan Lapangan (${assignedLaporan.size})",
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-        }
-
-        // List of Laporan
-        if (assignedLaporan.isEmpty()) {
-            item {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Tidak ada laporan pekerjaan aktif saat ini.", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                }
-            }
-        } else {
-            items(assignedLaporan) { laporan ->
-                LaporanItemRow(laporan)
-            }
-        }
-    }
-}
-
-@Composable
-fun LaporanItemRow(laporan: Laporan) {
-    var isExpanded by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(18.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = Modifier.fillMaxWidth().clickable { isExpanded = !isExpanded }
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(laporan.jenis, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                    Text(
-                        laporan.createdAt?.take(10) ?: "Hari ini",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                }
-
-                val statusColor = when (laporan.status) {
-                    LaporanStatus.BARU -> MaterialTheme.colorScheme.primary
-                    LaporanStatus.DIPROSES -> MaterialTheme.colorScheme.tertiary
-                    LaporanStatus.SELESAI -> MaterialTheme.colorScheme.secondary
-                    LaporanStatus.DITOLAK -> MaterialTheme.colorScheme.error
-                }
-
-                StatusPill(text = laporan.status.name, color = statusColor)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = laporan.deskripsi ?: "Tidak ada deskripsi.",
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = if (isExpanded) Int.MAX_VALUE else 2
-            )
-
-            if (isExpanded) {
-                if (!laporan.fotoUrl.isNullOrEmpty()) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Image(
-                        painter = rememberAsyncImagePainter(model = laporan.fotoUrl),
-                        contentDescription = "Foto Laporan",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(180.dp)
-                            .clip(RoundedCornerShape(8.dp)),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-
-                if (laporan.latitude != null && laporan.longitude != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Koordinat Lokasi: ${laporan.latitude}, ${laporan.longitude}",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Action controls for petugas
-                if (laporan.status == LaporanStatus.BARU || laporan.status == LaporanStatus.DIPROSES) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        if (laporan.status == LaporanStatus.BARU) {
-                            Button(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        try {
-                                            SupabaseService.updateLaporanStatus(laporan.id ?: "", LaporanStatus.DIPROSES)
-                                            Toast.makeText(context, "Laporan disetujui untuk diproses!", Toast.LENGTH_SHORT).show()
-                                        } catch (e: Exception) {
-                                            Toast.makeText(context, "Gagal update status: ${e.message}", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text("Proses Tugas", fontSize = 12.sp)
-                            }
-                        } else if (laporan.status == LaporanStatus.DIPROSES) {
-                            Button(
-                                onClick = {
-                                    coroutineScope.launch {
-                                        try {
-                                            SupabaseService.updateLaporanStatus(laporan.id ?: "", LaporanStatus.SELESAI, "Selesai dibersihkan oleh petugas")
-                                            Toast.makeText(context, "Pekerjaan diselesaikan!", Toast.LENGTH_SHORT).show()
-                                        } catch (e: Exception) {
-                                            Toast.makeText(context, "Gagal update status: ${e.message}", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.weight(1f),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary)
-                            ) {
-                                Text("Selesaikan Tugas", fontSize = 12.sp)
-                            }
-                        }
-
-                        OutlinedButton(
-                            onClick = {
-                                coroutineScope.launch {
-                                    try {
-                                        SupabaseService.updateLaporanStatus(laporan.id ?: "", LaporanStatus.DITOLAK, "Ditolak oleh petugas")
-                                        Toast.makeText(context, "Laporan ditolak.", Toast.LENGTH_SHORT).show()
-                                    } catch (e: Exception) {
-                                        Toast.makeText(context, "Gagal update status: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                            },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Text("Tolak", fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -832,6 +668,7 @@ fun PetugasLaporanTab(profile: Profile) {
     var capturedPhotoFile by remember { mutableStateOf<File?>(null) }
     var jenisLaporan by remember { mutableStateOf("") }
     var deskripsi by remember { mutableStateOf("") }
+    var tahapLaporan by remember { mutableStateOf(TahapLaporan.SEBELUM) }
     var isLoading by remember { mutableStateOf(false) }
 
     val locationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
@@ -882,6 +719,48 @@ fun PetugasLaporanTab(profile: Profile) {
                 shape = RoundedCornerShape(12.dp),
                 maxLines = 5
             )
+        }
+
+        item {
+            Text(
+                text = "Tahap Dokumentasi",
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                val sebelumSelected = tahapLaporan == TahapLaporan.SEBELUM
+                Button(
+                    onClick = { tahapLaporan = TahapLaporan.SEBELUM },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (sebelumSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (sebelumSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
+                    Icon(Icons.Default.HourglassEmpty, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Sebelum", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                }
+
+                val sesudahSelected = tahapLaporan == TahapLaporan.SESUDAH
+                Button(
+                    onClick = { tahapLaporan = TahapLaporan.SESUDAH },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (sesudahSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (sesudahSelected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurface
+                    )
+                ) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Sesudah", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
         }
 
         item {
@@ -950,7 +829,8 @@ fun PetugasLaporanTab(profile: Profile) {
                                         fotoUrl = photoUrl,
                                         latitude = lat,
                                         longitude = lng,
-                                        status = LaporanStatus.SELESAI // Auto selesai untuk laporan kegiatan petugas
+                                        status = LaporanStatus.SELESAI, // Auto selesai untuk laporan kegiatan petugas
+                                        tahap = tahapLaporan
                                     )
 
                                     SupabaseService.submitLaporan(newLaporan)
@@ -959,6 +839,7 @@ fun PetugasLaporanTab(profile: Profile) {
                                     jenisLaporan = ""
                                     deskripsi = ""
                                     capturedPhotoFile = null
+                                    tahapLaporan = TahapLaporan.SEBELUM
                                 } catch (e: Exception) {
                                     isLoading = false
                                     Toast.makeText(context, "Gagal mengirim laporan: ${e.message}", Toast.LENGTH_LONG).show()
